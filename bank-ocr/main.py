@@ -29,6 +29,24 @@ seven_segments = [ \
 
 # - open file
 # - read lines
+class ReadWriteFile:
+	def __init__ (self, src, out):
+		self.src = src
+		self.out = out
+	
+	def output (self):
+		# write to another file
+		with open(self.out, "w") as fout, open(self.src, 'r') as fin:
+			for l in fin:
+				# do calculations
+				# print per line
+				fout.write ( l + " : %s \n" % str(1234) )
+			# write something total
+			fout.write ( "\n Output value :  %s" % (str(1234)) )
+		# file automatically closes after with?
+txt_reader = ReadWriteFile('testread.txt','testwrite.txt')
+txt_reader.output()
+txt_filtered = filter(txt_out, 'something to find!')
 # - identify chunks (first line with only pattern [0] or [1])
 # - cut chunks at last line (3)
 # - hold chunk in memory while cutting top,mid,bottom line into n subsegs
