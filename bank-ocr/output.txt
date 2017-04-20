@@ -1,0 +1,15 @@
+ : False
+    _  _     _  _  _  _  _ : True
+  | _| _||_||_ |_   ||_||_| : True
+  ||_  _|  | _||_|  ||_| _| : True
+ : False
+    _  _     _  _  _  _  _ : True
+  | _| _||_||_ |_   ||_||_| : True
+  ||_  _|  | _||_|  ||_| _| : True
+ : False
+ : False
+    _  _     _  _  _  _  _ : True
+  | _| _||_||_ |_   ||_||_| : True
+  ||_  _|  | _||_|  ||_| _| : True
+  : False
+Final finding :  False
