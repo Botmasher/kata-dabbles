@@ -27,6 +27,27 @@ seven_segments = [ \
 
 #segments_map = {n: seven_segments[n] for n in range(0,len(seven_segments))}
 
+# turn any nested array of triple ints into seven segs
+def translate_into_segs (lines):
+	segments = [] 
+	for l in lines:
+		segsments.append([ [segs[a[0]],segs[a[1]],segs[a[2]] for a in l ])
+	return segments
+	# also do layout, which means rotating/cutting each three
+
+# turn any nested array of triple ints into digits
+def translate_into_digits (lines):
+	digits = []
+	for l in lines:
+		line_digits = []
+		for a in l:
+			num_ind = [ segs.index(sym) for sym in a ]
+			num = seven_segments.index(num_ind)
+			line_digits.append(num)
+		digits.append(line_digits)
+	return digits
+	# also do printing layout (convert to string and print)
+
 # open file and read lines
 class ReadWriteFile:
 	def __init__ (self, src, out):
@@ -36,7 +57,7 @@ class ReadWriteFile:
 	def output (self):
 		found_lines = []
 		count = 0
-		numbers
+		nums = []
 		# write to another file
 		with open(self.out, "w") as fout, open(self.src, 'r') as fin:
 			for l in fin:
@@ -47,17 +68,26 @@ class ReadWriteFile:
 						found_lines.append(count)
 						found_lines.append(count + 1)
 						found_lines.append(count + 2)
+						line_nums = []
 						# rip each line in threes
-						for r in range (0,len(l)-1):
-						# store index in segs
+						for i in range (0,int((len(l)-1)/3):
+							# store index in segs
+							a = []
 							# three from line+0 -> index in segs -> a[0]
+							a.append ( l[i*3:(i+1)*3] )
 							# three from line+1 -> index in segs -> a[1]
+							a.append ( fin[count+1] [i*3:(i+1)*3] )
 							# three from line+2 -> index in segs -> a[2]
+							a.append ( fin[count+2] [i*3:(i+1)*3] )
 							# a[0:3] -> nested into line[a]
-							# append line[a] -> all_nums_a[]
-						# now your all_nums_a can be switched back and forth
+							line_nums.append (a)
+						# append line[a] -> all_nums_a[]
+						nums.append (line_nums)
 				# print per line
 				fout.write ( "%s : %s\n" % (l.rstrip('\n'), found_numline) )
+			# now your all_nums_a can be switched back and forth
+			translate_to_digits(nums)
+			translate_to_numbers(nums)
 			# write something after iterating
 			fout.write ( "Final finding :  %s" % (found_numline) )
 		# file automatically closes after with?
