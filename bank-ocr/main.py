@@ -47,6 +47,14 @@ def translate_to_indices (a):
 	else:
 		return None
 
+def checksum (acct_num):
+	if '?' in acct_num:
+		return ' ILL'
+	sum_val = sum( int(acct_num[i])*i for i in range(len(acct_num)) )
+	if sum_val%11 == 0:
+		return ''
+	return ' ERR'
+
 # turn nested arrays of triple segments into digits
 def translate_to_digits (line):
 	line_digits = []
@@ -61,7 +69,7 @@ def translate_to_digits (line):
 			print_digits += str(num)
 		# not an array of 3 segments
 		except:
-			pass
+			print_digits += "?"
 	# return as both array and string
 	#return (line_digits, print_digits)
 	# just return string since only this implemented below
@@ -102,12 +110,18 @@ class ReadWriteFile:
 						# append line[a] -> all_nums_a[]
 						# translate set of 3 lines with valid segments
 						digit_line = translate_to_digits (line_segs)
+						# add status comment if acct number fails checksum
+						digit_line += checksum(digit_line)
 						fout.write(digit_line+"\n")
 						# store this line in all numbers found
 						nums.append (digit_line)
+			#for i in range(0,len(nums)):
+			#	print(checksum(nums[i]))
 			# write something after iterating
 			print(nums)
 		# file automatically closes after with
+
+# /!\  Handle line final 7segs like 5 that may end in '|_' instead of expected '|_ '
 
 txt_in = 'input.txt'
 txt_out = 'output.txt'
