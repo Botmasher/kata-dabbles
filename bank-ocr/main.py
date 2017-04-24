@@ -8,7 +8,7 @@
 
 # Naïve: Hash of seven-segment representation of digits 0-9
 # Upgrade: compare seven-segment to alphanum, probability of character match, offer guess
-segs = [ '   ', ' _ ', '  |' , '|_ ' , ' _|' , '| |', '|_|' ]
+segs = [ '   ' , ' _ ' , '  |' , '|_ ' , ' _|' , '| |' , '|_|' ]
 seven_segments = [ \
 	[1,5,6], \
 	[0,2,2], \
@@ -47,6 +47,7 @@ def translate_to_indices (a):
 	else:
 		return None
 
+# check for well-formed account numbers
 def checksum (acct_num):
 	if '?' in acct_num:
 		return ' ILL'
@@ -55,25 +56,53 @@ def checksum (acct_num):
 		return ''
 	return ' ERR'
 
-# turn nested arrays of triple segments into digits
-def translate_to_digits (line):
-	line_digits = []
+# turn single seven segments array into an integer
+def translate_seven_segments (a):
+	# find indices of seg pattern then numeral corresponding to pattern
+	try:
+		seg_indices = [ segs.index(a[0]),segs.index(a[1]),segs.index(a[2]) ]
+		num = seven_segments.index(seg_indices)
+		return str(num)
+	# the segment pattern did not match a numeral
+	except:
+		return '?'
+
+# turn nested line arrays of triple segments into account number digits
+# built around seven segs translation function above
+def translate_line_to_digits (line):
 	print_digits = ''
+	# each subarray contains 3 segment sections to be read as one numeral
 	for a in line:
-		# find indices of seg pattern then find digit corresponding to that pattern
-		try:
-			seg_indices = [ segs.index(a[0]),segs.index(a[1]),segs.index(a[2]) ]
-			num = seven_segments.index(seg_indices)
-			# store in both array and string
-			line_digits.append(num)
-			print_digits += str(num)
-		# not an array of 3 segments
-		except:
-			print_digits += "?"
-	# return as both array and string
-	#return (line_digits, print_digits)
+		num = translate_seven_segments(a)
+		# build account number string
+		print_digits += str(num)
 	# just return string since only this implemented below
 	return print_digits
+
+# determine if digits are off by only one segment
+# implemented because scanner reported 
+def check_segs_offbyone (a):
+	# (0) For each of the three seg pieces in passed-in a
+		# for each seg in segs
+			# are the pieces just one char distance off from seg?
+			# if so, store seg index in array which:
+			# - is initialized before loops
+			# - contains three elements
+			# - has each element correspond to original segment row
+			# - elements can be of type subarray or just string of ints
+	# (1) For each of the strings in your new array
+		# create copy of a
+		# for each int(character) in the string 
+			# assign character to a at index of character in new array
+			# check if this array matches anything in seven_segments
+			# if it does, you have a number - store it
+			# if it does not, keep searching
+	# (2) Report back how many good off-by-one numeral options were found
+	# - if none were found, this also needs to be reported back (empty array?)
+	# - the parent func may use this to suggest " AMB" (multiple options)
+	# - or may use this to report " ILL" (no options, including original a)
+# now use this function during checksum to determine if an acct num is " AMB"
+# if no numbers are possible it is still just " ILL"
 
 # open file and read lines
 class ReadWriteFile:
@@ -109,7 +138,7 @@ class ReadWriteFile:
 						found_lineset = []
 						# append line[a] -> all_nums_a[]
 						# translate set of 3 lines with valid segments
-						digit_line = translate_to_digits (line_segs)
+						digit_line = translate_line_to_digits (line_segs)
 						# add status comment if acct number fails checksum
 						digit_line += checksum(digit_line)
 						fout.write(digit_line+"\n")
@@ -121,7 +150,7 @@ class ReadWriteFile:
 			print(nums)
 		# file automatically closes after with
 
-# /!\  Handle line final 7segs like 5 that may end in '|_' instead of expected '|_ '
+# Handle line final 7segs like 5 that may end in '|_' instead of expected '|_ '
 
 txt_in = 'input.txt'
 txt_out = 'output.txt'
