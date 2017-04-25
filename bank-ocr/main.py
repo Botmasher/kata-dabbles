@@ -6,6 +6,9 @@
 ## 	https://github.com/testdouble/contributing-tests/wiki/Bank-OCR-kata
 ##
 
+import re
+import math
+
 # Naïve: Hash of seven-segment representation of digits 0-9
 # Upgrade: compare seven-segment to alphanum, probability of character match, offer guess
 segs = [ '   ' , ' _ ' , '  |' , '|_ ' , ' _|' , '| |' , '|_|' ]
@@ -79,26 +82,36 @@ def translate_line_to_digits (line):
 	# just return string since only this implemented below
 	return print_digits
 
-# determine if digits are off by only one segment
-# implemented because scanner reported 
-def check_segs_offbyone (a):
-	# (0) For each of the three seg pieces in passed-in a
-		# for each seg in segs
-			# are the pieces just one char distance off from seg?
-			# if so, store seg index in array which:
-			# - is initialized before loops
-			# - contains three elements
-			# - has each element correspond to original segment row
-			# - elements can be of type subarray or just string of ints
-	# (1) For each of the strings in your new array
-		# create copy of a
-		# for each int(character) in the string 
-			# assign character to a at index of character in new array
-			# check if this array matches anything in seven_segments
-			# if it does, you have a number - store it
-			# if it does not, keep searching
-	# (2) Report back how many good off-by-one numeral options were found
-	# - if none were found, this also needs to be reported back (empty array?)
+# determine if digit is off by only one segment
+# implemented because scanner reportedly adds/drops pipes and underscores
+def check_segs_offbyone (num_a):
+
+	# store 7seg index subbars where each 7seg differs from num_a by one char
+	found_oneoffs = []
+
+	# compare each of three seg pieces in passed-in a
+	for i in range(3):
+
+		# compare to each seg in valid segment array
+		for seg in segs:
+
+			# store segs just one char distance off from piece
+			oneoff_pattern = '^([ |_]%s%s|%s[ |_]%s|%s%s[ |_])' % \
+				(piece[1], piece[2], piece[0], piece[2], piece[0], piece[1])
+			matched = re.match (oneoff_pattern, seg)
+
+			# build oneoff digit array from original and this differing segment
+			if matched:
+				new_oneoff = num_a
+				new_oneoff[i] = segs.index(seg)
+
+			# the oneoff segments are really a digit, store as a find
+			if matched and new_oneoff in seven_segments:
+				found_oneoffs.append(new_oneoff)
+
+	# report back how many good off-by-one numeral options were found
+	return found_oneoffs
+	# - if none were found, this also needs to be reported back (or empty array)
 	# - the parent func may use this to suggest " AMB" (multiple options)
 	# - or may use this to report " ILL" (no options, including original a)
 # now use this function during checksum to determine if an acct num is " AMB"
