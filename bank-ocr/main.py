@@ -39,48 +39,65 @@ def translate_to_segs (lines):
 	return segments
 	# also do layout, which means rotating/cutting each three
 
-# not yet implemented; not used below
-def translate_to_indices_array (segs_a):
-	return None
+# # not yet implemented; not used below
+# def translate_to_indices_array (segs_a):
+# 	return None
 
-# not yet tested; not used below
-def translate_to_indices (a):
-	if a in seven_segments:
-		return seven_segments.index(a)
-	else:
-		return None
+# # not yet tested; not used below
+# def translate_to_indices (a):
+# 	if a in seven_segments:
+# 		return seven_segments.index(a)
+# 	else:
+# 		return None
+
+# # turn single seven segments array into an integer
+# # superseded by the new off_by_one check
+# def translate_seven_segments (a):
+# 	# find indices of seg pattern then numeral corresponding to pattern
+# 	check_segs_offbyone(a)
+# 	try:
+# 		seg_indices = [ segs.index(a[0]),segs.index(a[1]),segs.index(a[2]) ]
+# 		num = seven_segments.index(seg_indices)
+# 		return str(num)
+# 	# the segment pattern did not match a numeral
+# 	except:
+# 		return '?'
 
 # check for well-formed account numbers
-def checksum (acct_num):
-	if '?' in acct_num:
-		return ' ILL'
+def checksum (acct_num, status_code):
 	sum_val = sum( int(acct_num[i])*i for i in range(len(acct_num)) )
 	if sum_val%11 == 0:
-		return ''
+		return status_code
 	return ' ERR'
 
-# turn single seven segments array into an integer
-def translate_seven_segments (a):
-	# find indices of seg pattern then numeral corresponding to pattern
-	try:
-		seg_indices = [ segs.index(a[0]),segs.index(a[1]),segs.index(a[2]) ]
-		num = seven_segments.index(seg_indices)
-		return str(num)
-	# the segment pattern did not match a numeral
-	except:
-		return '?'
-
 # turn nested line arrays of triple segments into account number digits
-# built around seven segs translation function above
+# built around seven segs off-by-one function
 def translate_line_to_digits (line):
 	print_digits = ''
+	status = ''
+
 	# each subarray contains 3 segment sections to be read as one numeral
-	for a in line:
-		num = translate_seven_segments(a)
-		# build account number string
-		print_digits += str(num)
-	# just return string since only this implemented below
-	return print_digits
+	for segment_array in line:
+
+		# find how many numbers this array can represent
+		options = check_segs_offbyone(segment_array)
+
+		## Build account number string from options
+
+		# unambiguous and represents a number
+		if len(options) == 1:
+			print_digits += str(seven_segments.index(options[0]))
+		# ambiguous and the original segs are or are not a number
+		elif len(options) > 1:
+			status = ' AMB'
+			print_digits += str(seven_segments.index(options[0]))
+		# unambiguous and does not represent a number
+		else:
+			status = ' ILL'
+			print_digits += '?'
+
+	# return the concatenated number and the status code
+	return (print_digits, status)
 
 # determine if digit is off by only one segment
 # implemented because scanner reportedly adds/drops pipes and underscores
@@ -89,33 +106,51 @@ def check_segs_offbyone (num_a):
 	# store 7seg index subbars where each 7seg differs from num_a by one char
 	found_oneoffs = []
 
+	# added to check if the passed-in array itself matches a number
+	original_number = []
+
 	# compare each of three seg pieces in passed-in a
 	for i in range(3):
+		piece = num_a[i]
 
 		# compare to each seg in valid segment array
 		for seg in segs:
 
 			# store segs just one char distance off from piece
-			oneoff_pattern = '^([ |_]%s%s|%s[ |_]%s|%s%s[ |_])' % \
+			oneoff_pattern = '^([ |_]%s%s|%s[ |_]%s|%s%s[ |_]{1}$)' % \
 				(piece[1], piece[2], piece[0], piece[2], piece[0], piece[1])
 			matched = re.match (oneoff_pattern, seg)
 
 			# build oneoff digit array from original and this differing segment
 			if matched:
-				new_oneoff = num_a
-				new_oneoff[i] = segs.index(seg)
+				new_segs = num_a[:]
+				new_segs[i] = seg
+				
+				# see if match is valid segs and represents a seven-seg number
+				try:
+					new_indices = [segs.index(s) for s in new_segs]
+					# the matched segments are a number
+					if new_indices in seven_segments:
+						# the matched number is the old passed-in number
+						if new_segs == num_a:
+							original_number = new_indices
+						# the matched number is a new number
+						elif new_indices not in found_oneoffs:
+							found_oneoffs.append(new_indices)
+						# the matched number was previously accounted for
+						else:
+							pass
+				# the match did not find a number
+				except:
+					pass
 
-			# the oneoff segments are really a digit, store as a find
-			if matched and new_oneoff in seven_segments:
-				found_oneoffs.append(new_oneoff)
+	# if the passed-in array matches a number, put it at the front
+	if original_number in seven_segments:
+		found_oneoffs.insert(0, original_number)
 
+	print (found_oneoffs)
 	# report back how many good off-by-one numeral options were found
 	return found_oneoffs
-	# - if none were found, this also needs to be reported back (or empty array)
-	# - the parent func may use this to suggest " AMB" (multiple options)
-	# - or may use this to report " ILL" (no options, including original a)
-# now use this function during checksum to determine if an acct num is " AMB"
-# if no numbers are possible it is still just " ILL"
 
 # open file and read lines
 class ReadWriteFile:
@@ -151,9 +186,9 @@ class ReadWriteFile:
 						found_lineset = []
 						# append line[a] -> all_nums_a[]
 						# translate set of 3 lines with valid segments
-						digit_line = translate_line_to_digits (line_segs)
-						# add status comment if acct number fails checksum
-						digit_line += checksum(digit_line)
+						digit_line, status = translate_line_to_digits (line_segs)
+						# pass or fail checksum and add status comment
+						digit_line += checksum(digit_line, status)
 						fout.write(digit_line+"\n")
 						# store this line in all numbers found
 						nums.append (digit_line)
