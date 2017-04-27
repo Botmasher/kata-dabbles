@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 ## 	BANK OCR KATA
-## 	Josh (Botmasher) playing thru stories found here
+## 	Josh (Botmasher) playing thru stories found here:
 ## 	https://github.com/testdouble/contributing-tests/wiki/Bank-OCR-kata
-##
+##  Going with first hunches and staying under a few hours => I made spaghetti :D
 
 import re
 import math
@@ -165,21 +165,32 @@ class ReadWriteFile:
 			found_lineset = []
 			for l in fin:
 				if len(l)>2 and l[0:3] in segs:
-					# /!\ TODO check for \n or other characters; test len matches
+					# TODO check for \n or other characters; test len matches
 					found_lineset.append(l)
 					# turn 3 lines of segs into a single digit row
 					if len(found_lineset)>2:
 						line_segs = []
 						# rip each line in threes
 						for i in range ( 0, int(len(l)/3) ):
+							
+							# cut this line 
+							line_0_segs = found_lineset[0] [i*3:(i+1)*3]
+							line_1_segs = found_lineset[1] [i*3:(i+1)*3]
+							line_2_segs = found_lineset[2] [i*3:(i+1)*3]
+
+							# check line-end segs for missing whitespace and
+							# add spaces to treat it as a full 3-char seg line
+							if i*3 >= len(found_lineset[0]) and len(line_0_segs)<3:
+								line_0_segs += ' '*(3-len(line_0_segs))
+
 							# store index in segs
 							a = []
 							# three from line+0 -> index in segs -> a[0]
-							a.append ( found_lineset[0] [i*3:(i+1)*3] )
+							a.append (line_0_segs)
 							# three from line+1 -> index in segs -> a[1]
-							a.append ( found_lineset[1] [i*3:(i+1)*3] )
+							a.append (line_1_segs)
 							# three from line+2 -> index in segs -> a[2]
-							a.append ( found_lineset[2] [i*3:(i+1)*3] )
+							a.append (line_2_segs)
 							# a[0:3] -> nested into [line[a]]
 							line_segs.append (a)
 						# clear this set of 3 lines since digit row
@@ -192,13 +203,14 @@ class ReadWriteFile:
 						fout.write(digit_line+"\n")
 						# store this line in all numbers found
 						nums.append (digit_line)
-			#for i in range(0,len(nums)):
-			#	print(checksum(nums[i]))
-			# write something after iterating
+			# account numbers
 			print(nums)
-		# file automatically closes after with
+		# file automatically closes after generator
+		return nums
 
-# Handle line final 7segs like 5 that may end in '|_' instead of expected '|_ '
+# TODO
+# - Handle line final 7segs like 5 that may end in '|_' instead of expected '|_ '
+# - Add array c ambiguous number suggestions to the rather opaque ' AMB' status
 
 txt_in = 'input.txt'
 txt_out = 'output.txt'
