@@ -75,26 +75,45 @@ def checksum (acct_num, status_code):
 def translate_line_to_digits (line):
 	print_digits = ''
 	status = ''
+	illegible_wildcard = '?'
+	ambiguous_options_lists = []
 
 	# each subarray contains 3 segment sections to be read as one numeral
-	for segment_array in line:
+	for i in range(len(line)):
+
+		segment_array = line[i]
 
 		# find how many numbers this array can represent
 		options = check_segs_offbyone(segment_array)
 
 		## Build account number string from options
 
-		# unambiguous and represents a number
-		if len(options) == 1:
-			print_digits += str(seven_segments.index(options[0]))
-		# ambiguous and the original segs are or are not a number
-		elif len(options) > 1:
-			status = ' AMB'
-			print_digits += str(seven_segments.index(options[0]))
+		# unambiguous or ambiguous and represents a number
+		if len(options) >= 1:
+			this_digit = str(seven_segments.index(options[0]))
 		# unambiguous and does not represent a number
 		else:
 			status = ' ILL'
-			print_digits += '?'
+			this_digit = illegible_wildcard
+
+		# add this number to final account number and to ambiguous options (if any)
+		for amblist in ambiguous_options_lists:
+			amblist.append(this_digit)
+		print_digits += this_digit
+
+		# 'ambiguous' status (does not override 'illegible' status)
+		if len(options) > 1 and illegible_wildcard not in print_digits:
+			status = ' AMB'
+		
+		# iterate through and store the options
+		for o_i in range(0,len(options-1)):
+			# if there aren't this many account number options stored, add a new option
+			if o_i > len(ambiguous_options_lists):
+				ambiguous_options_lists.append([print_digits])
+			# add this ambiguous option to the options
+			# (skip zeroth option - the default digit already recommended in print_digits)
+			ambiguous_options_lists[o_i].append(options[o_i+1])
+			
 
 	# return the concatenated number and the status code
 	return (print_digits, status)
