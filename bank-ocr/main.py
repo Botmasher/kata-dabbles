@@ -75,27 +75,56 @@ def checksum (acct_num, status_code):
 def translate_line_to_digits (line):
 	print_digits = ''
 	status = ''
+	illegible_wildcard = '?'
+	ambiguous_options_lists = []
 
 	# each subarray contains 3 segment sections to be read as one numeral
-	for segment_array in line:
+	for i in range(len(line)):
+
+		segment_array = line[i]
 
 		# find how many numbers this array can represent
 		options = check_segs_offbyone(segment_array)
 
 		## Build account number string from options
 
-		# unambiguous and represents a number
-		if len(options) == 1:
-			print_digits += str(seven_segments.index(options[0]))
-		# ambiguous and the original segs are or are not a number
-		elif len(options) > 1:
-			status = ' AMB'
-			print_digits += str(seven_segments.index(options[0]))
+		# unambiguous or ambiguous and represents a number
+		if len(options) >= 1:
+			this_digit = str(seven_segments.index(options[0]))
 		# unambiguous and does not represent a number
 		else:
 			status = ' ILL'
-			print_digits += '?'
+			this_digit = illegible_wildcard
 
+		# add this number to final account number and to ambiguous options (if any)
+		for amblist in ambiguous_options_lists:
+			amblist.append(this_digit)
+		print_digits += this_digit
+
+		# 'ambiguous' status (does not override 'illegible' status)
+		if len(options) > 1 and illegible_wildcard not in print_digits:
+			status = ' AMB'
+		
+		# /!\ return values are all off - redo
+		# iterate through and store the options
+		new_options = options[1:]
+		for o_i in range(len(new_options)):
+			print (o_i)
+			# if there aren't this many account number options stored, add a new option
+			if o_i >= len(ambiguous_options_lists):
+				ambiguous_options_lists.append([])
+			print (ambiguous_options_lists)
+			# add this ambiguous option to the options
+			# (skip zeroth option - the default digit already recommended in print_digits)
+			ambiguous_options_lists[o_i] += str(seven_segments.index(new_options[o_i]))
+		# new simple strategy for AMB option returns:
+		# (0) build	out a list of n sample recommendations (start with XXXX....)
+		# (1) as find options, replace X in that spot with found numbers
+		# (2) at the end, chuck any that are all XXXXX
+		# (3) at the end, replace any that are partially XXXX with print_digit[i]
+		# (4) at the end, return samples from these options appended to AMB status
+
+	print (ambiguous_options_lists)
 	# return the concatenated number and the status code
 	return (print_digits, status)
 
@@ -148,7 +177,6 @@ def check_segs_offbyone (num_a):
 	if original_number in seven_segments:
 		found_oneoffs.insert(0, original_number)
 
-	print (found_oneoffs)
 	# report back how many good off-by-one numeral options were found
 	return found_oneoffs
 
