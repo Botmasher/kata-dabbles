@@ -65,8 +65,11 @@ def translate_to_segs (lines):
 
 # check for well-formed account numbers
 def checksum (acct_num, status_code):
-	sum_val = sum( int(acct_num[i])*i for i in range(len(acct_num)) )
-	if sum_val%11 == 0:
+	ambiguous = ' AMB'
+	sum_val = None
+	if '?' not in acct_num:
+		sum_val = sum( int(acct_num[i])*i for i in range(len(acct_num)) )
+	if sum_val and sum_val%11 == 0 or ambiguous in status_code:
 		return status_code
 	return ' ERR'
 
@@ -146,8 +149,17 @@ def translate_line_to_digits (line):
 	# return the concatenated number and the status code
 	return (print_digits, status)
 
+# go through list and verify that elements are keys in a dictionary
+def list_elements_are_keys_in_hash (l, h):
+	if len(l) == 1:
+		return l[0] in h
+	return (l[0] in h and list_elements_are_keys_in_hash(l[1:], h))
 
-# /!\ REWRITE - it's recommending e.g. 4 for 1, 3 for 2, 6 for 0
+# /!\ here or in translation, solve for:
+# (1) returning falsy seg lists (None/[]) and still going through them as options
+# (2) building acct nums with ? and trying to checksum int() sum_val them
+# /!\
+
 # determine if digit is off by only one segment
 # implemented because scanner reportedly adds/drops pipes and underscores
 def check_segs_offbyone (num_a):
@@ -155,50 +167,43 @@ def check_segs_offbyone (num_a):
 	# store 7seg index subbars where each 7seg differs from num_a by one char
 	found_oneoffs = []
 
-	# added to check if the passed-in array itself matches a number
-	original_number = []
+	# build oneoff dictionary by eye instead of regexing patterns for now
+	oneoff_hash = {}
+	# segs are 0:'   ',1:' _ ',2:'  |',3:'|_ ',4:' _|',5:'| |',6:'|_|'
+	oneoff_hash[segs[0]] = [segs[0], segs[1], segs[2]]
+	oneoff_hash[segs[1]] = [segs[1], segs[0], segs[3], segs[4]]
+	oneoff_hash[segs[2]] = [segs[2], segs[0], segs[4], segs[5]]
+	oneoff_hash[segs[3]] = [segs[3], segs[1], segs[6]]
+	oneoff_hash[segs[4]] = [segs[4], segs[1], segs[2], segs[6]]
+	oneoff_hash[segs[5]] = [segs[5], segs[2], segs[6]]
+	oneoff_hash[segs[6]] = [segs[6], segs[3], segs[4], segs[5]]
 
-	# compare each of three seg pieces in passed-in a
-	for i in range(3):
-		piece = num_a[i]
+	# guard against faulty num/seg array
+	if len(num_a) != 3 or not list_elements_are_keys_in_hash(num_a, oneoff_hash):
+		return []
 
-		# compare to each seg in valid segment array
-		for seg in segs:
-
-			# store segs just one char distance off from piece
-			oneoff_pattern = '^([ |_]%s%s|%s[ |_]%s|%s%s[ |_]{1}$)' % \
-				(piece[1], piece[2], piece[0], piece[2], piece[0], piece[1])
-			matched = re.match (oneoff_pattern, seg)
-
-			# build oneoff digit array from original and this differing segment
-			if matched:
-				new_segs = num_a[:]
-				new_segs[i] = seg
-				
-				# see if match is valid segs and represents a seven-seg number
-				try:
-					new_indices = [segs.index(s) for s in new_segs]
-					# the matched segments are a number
-					if new_indices in seven_segments:
-						# the matched number is the old passed-in number
-						if new_segs == num_a:
-							original_number = new_indices
-						# the matched number is a new number
-						elif new_indices not in found_oneoffs:
-							found_oneoffs.append(new_indices)
-						# the matched number was previously accounted for
-						else:
-							pass
-				# the match did not find a number
-				except:
-					pass
-
-	# if the passed-in array matches a number, put it at the front
-	if original_number in seven_segments:
-		found_oneoffs.insert(0, original_number)
+	# go through each passed in segment and look up each of its oneoffs
+	for i in range(len(num_a)):
+		for oneoff_seg in oneoff_hash[num_a[i]]:
+			# compose segment permutation and translate into seg indices
+			new_segs = num_a[:]
+			new_segs[i] = oneoff_seg
+			new_num = [segs.index(s) for s in new_segs]
+			# this permutation is the original segs and is indeed a 7-seg num
+			if new_num in seven_segments and new_segs == num_a:
+				# save to place up front at the end
+				found_oneoffs.insert(0, new_num)
+			# this permutation matches a new 7-seg num
+			elif new_num in seven_segments:
+				found_oneoffs.append(new_num)
+			# this permutation is not a 7-segment representation of a number
+			else:
+				pass
 
 	# report back how many good off-by-one numeral options were found
+	# (including the original at index 0 if it was also a number)
 	return found_oneoffs
+
 
 # open file and read lines
 class ReadWriteFile:
