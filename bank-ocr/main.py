@@ -89,7 +89,7 @@ def translate_line_to_digits (line):
 	ambiguous_options_lists = []
 
 	# build ambiguous options placeholders
-	for i in range (5):
+	for i in range (10):
 		ambiguous_options_lists.append([blank_char for l in line])
 
 	# each subarray contains 3 segment sections to be read as one numeral
@@ -133,18 +133,25 @@ def translate_line_to_digits (line):
 	
 	# clean up options and append to AMB
 	if status == ambiguous:
+		used_options = []
+		status += ' ['
 		for opt in ambiguous_options_lists:
 			# chuck any options that are still blank (unfilled/not replaced)
 			if opt and all(e==blank_char for e in opt):
 				pass
 			# replace any that are partially blank with print_digit[i]
-			else:
+			elif opt not in used_options:
 				for char_i in range(len(opt)):
 					if opt[char_i] == blank_char:
 						opt[char_i] = print_digits[char_i]
 				# join character array into single acct num recommendation string
 				# we now have an option to append to AMB status
-				status += ', '+''.join(opt)
+				status += "%s, " % "".join(opt)
+				used_options.append(opt)
+			# this option already used
+			else:
+				pass
+		status = status[:-2]+']'
 	print (print_digits + status)
 	# return the concatenated number and the status code
 	return (print_digits, status)
@@ -166,6 +173,7 @@ def check_segs_offbyone (num_a):
 
 	# store 7seg index subbars where each 7seg differs from num_a by one char
 	found_oneoffs = []
+	found_original = False
 
 	# build oneoff dictionary by eye instead of regexing patterns for now
 	oneoff_hash = {}
@@ -190,16 +198,18 @@ def check_segs_offbyone (num_a):
 			new_segs[i] = oneoff_seg
 			new_num = [segs.index(s) for s in new_segs]
 			# this permutation is the original segs and is indeed a 7-seg num
-			if new_num in seven_segments and new_segs == num_a:
+			if new_num in seven_segments and new_segs == num_a and not found_original:
 				# save to place up front at the end
 				found_oneoffs.insert(0, new_num)
+				found_original = True
 			# this permutation matches a new 7-seg num
-			elif new_num in seven_segments:
+			elif new_num in seven_segments and new_segs != num_a:
 				found_oneoffs.append(new_num)
 			# this permutation is not a 7-segment representation of a number
 			else:
 				pass
 
+	print (found_oneoffs)
 	# report back how many good off-by-one numeral options were found
 	# (including the original at index 0 if it was also a number)
 	return found_oneoffs
