@@ -11,57 +11,64 @@ import math
 
 # Naïve: Hash of seven-segment representation of digits 0-9
 # Upgrade: compare seven-segment to alphanum, probability of character match, offer guess
-segs = [ '   ' , ' _ ' , '  |' , '|_ ' , ' _|' , '| |' , '|_|' ]
-seven_segments = [ \
-	[1,5,6], \
-	[0,2,2], \
-	[1,4,3], \
-	[1,4,4], \
-	[0,6,2], \
-	[1,3,4], \
-	[1,3,6], \
-	[1,2,2], \
-	[1,6,6], \
-	[1,6,4], \
-]
 
-#for a in seven_segments:
-#	print (segs[a[0]]+'\n'+segs[a[1]]+'\n'+segs[a[2]])
+class Seven_Segment:
+	# all valid segs for making a numeral
+	segs = [ '   ' , ' _ ' , '  |' , '|_ ' , ' _|' , '| |' , '|_|' ]
+	# segs indices for forming numerals 0 to 9
+	indices = [ \
+		[1,5,6], \
+		[0,2,2], \
+		[1,4,3], \
+		[1,4,4], \
+		[0,6,2], \
+		[1,3,4], \
+		[1,3,6], \
+		[1,2,2], \
+		[1,6,6], \
+		[1,6,4], \
+	]
 
-#segments_map = {n: seven_segments[n] for n in range(0,len(seven_segments))}
+	def __init__ (self):
+		return self
 
-# turn any nested array of triple ints into seven segs
-def translate_to_segs (lines):
-	segments = [] 
-	for l in lines:
-		for a in l:
-			segments.append([ segs[a[0]],segs[a[1]],segs[a[2]]])
-	return segments
-	# also do layout, which means rotating/cutting each three
+	# translate a single digit into seven segs
+	def num_to_segs (self, numeral):
+		if type(numeral) is int and len(str(numeral)) == 1:
+			num_seg_indices = self.indices[numeral]
+			num_segs = [ self.segs[num_seg_indices[n]] for n in num_seg_indices ]
+			return num_segs
+		return None
 
-# # not yet implemented; not used below
-# def translate_to_indices_array (segs_a):
-# 	return None
+	# translate seven segments into a single digit
+	def segs_to_num (self, segments):
+		# find seg indices then find the number they represent
+		try:
+			indices = self.segs_to_indices (segments)
+			return self.indices.index(indices)
+		# not a seven-segment representation of a number
+		except:
+			return None
 
-# # not yet tested; not used below
-# def translate_to_indices (a):
-# 	if a in seven_segments:
-# 		return seven_segments.index(a)
-# 	else:
-# 		return None
+	# translate seven segments into segs indices
+	def segs_to_indices (self, segments):
+		# find seg indices then find the number they represent
+		try:
+			return [ self.segs.index(segments[i]) for i in range(3) ]
+		# not a seven-segment representation of a number
+		except:
+			return None
 
-# # turn single seven segments array into an integer
-# # superseded by the new off_by_one check
-# def translate_seven_segments (a):
-# 	# find indices of seg pattern then numeral corresponding to pattern
-# 	check_segs_offbyone(a)
-# 	try:
-# 		seg_indices = [ segs.index(a[0]),segs.index(a[1]),segs.index(a[2]) ]
-# 		num = seven_segments.index(seg_indices)
-# 		return str(num)
-# 	# the segment pattern did not match a numeral
-# 	except:
-# 		return '?'
+	# translate segs indices into seven segments
+	def indices_to_segs (self, indices):
+		try:
+			return [ self.segs[indices[i]] for i in range(3) ]
+		# not a seven-segment representation of a number
+		except:
+			return None
+
+sgmt = Seven_Segment()
+
 
 # check for well-formed account numbers
 def checksum (acct_num, status_code):
@@ -161,11 +168,6 @@ def list_elements_are_keys_in_hash (l, h):
 	if len(l) == 1:
 		return l[0] in h
 	return (l[0] in h and list_elements_are_keys_in_hash(l[1:], h))
-
-# /!\ here or in translation, solve for:
-# (1) returning falsy seg lists (None/[]) and still going through them as options
-# (2) building acct nums with ? and trying to checksum int() sum_val them
-# /!\
 
 # determine if digit is off by only one segment
 # implemented because scanner reportedly adds/drops pipes and underscores
@@ -270,10 +272,6 @@ class ReadWriteFile:
 			print(nums)
 		# file automatically closes after generator
 		return nums
-
-# TODO
-# - Handle line final 7segs like 5 that may end in '|_' instead of expected '|_ '
-# - Add array c ambiguous number suggestions to the rather opaque ' AMB' status
 
 txt_in = 'input.txt'
 txt_out = 'output.txt'
