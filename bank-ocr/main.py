@@ -30,7 +30,7 @@ class Seven_Segment:
 	]
 
 	def __init__ (self):
-		return self
+		return None
 
 	# translate a single digit into seven segs
 	def num_to_segs (self, numeral):
@@ -110,7 +110,7 @@ def translate_line_to_digits (line):
 		## Build account number string from options
 
 		# translate options into numerals
-		options = [seven_segments.index(n) for n in options]
+		options = [sgmt.indices.index(n) for n in options]
 
 		# unambiguous or ambiguous and represents a number
 		if len(options) >= 1:
@@ -180,13 +180,13 @@ def check_segs_offbyone (num_a):
 	# build oneoff dictionary by eye instead of regexing patterns for now
 	oneoff_hash = {}
 	# segs are 0:'   ',1:' _ ',2:'  |',3:'|_ ',4:' _|',5:'| |',6:'|_|'
-	oneoff_hash[segs[0]] = [segs[0], segs[1], segs[2]]
-	oneoff_hash[segs[1]] = [segs[1], segs[0], segs[3], segs[4]]
-	oneoff_hash[segs[2]] = [segs[2], segs[0], segs[4], segs[5]]
-	oneoff_hash[segs[3]] = [segs[3], segs[1], segs[6]]
-	oneoff_hash[segs[4]] = [segs[4], segs[1], segs[2], segs[6]]
-	oneoff_hash[segs[5]] = [segs[5], segs[2], segs[6]]
-	oneoff_hash[segs[6]] = [segs[6], segs[3], segs[4], segs[5]]
+	oneoff_hash[sgmt.segs[0]] = [sgmt.segs[0], sgmt.segs[1], sgmt.segs[2]]
+	oneoff_hash[sgmt.segs[1]] = [sgmt.segs[1], sgmt.segs[0], sgmt.segs[3], sgmt.segs[4]]
+	oneoff_hash[sgmt.segs[2]] = [sgmt.segs[2], sgmt.segs[0], sgmt.segs[4], sgmt.segs[5]]
+	oneoff_hash[sgmt.segs[3]] = [sgmt.segs[3], sgmt.segs[1], sgmt.segs[6]]
+	oneoff_hash[sgmt.segs[4]] = [sgmt.segs[4], sgmt.segs[1], sgmt.segs[2], sgmt.segs[6]]
+	oneoff_hash[sgmt.segs[5]] = [sgmt.segs[5], sgmt.segs[2], sgmt.segs[6]]
+	oneoff_hash[sgmt.segs[6]] = [sgmt.segs[6], sgmt.segs[3], sgmt.segs[4], sgmt.segs[5]]
 
 	# guard against faulty num/seg array
 	if len(num_a) != 3 or not list_elements_are_keys_in_hash(num_a, oneoff_hash):
@@ -198,14 +198,14 @@ def check_segs_offbyone (num_a):
 			# compose segment permutation and translate into seg indices
 			new_segs = num_a[:]
 			new_segs[i] = oneoff_seg
-			new_num = [segs.index(s) for s in new_segs]
+			new_num = [sgmt.segs.index(s) for s in new_segs]
 			# this permutation is the original segs and is indeed a 7-seg num
-			if new_num in seven_segments and new_segs == num_a and not found_original:
+			if new_num in sgmt.indices and new_segs == num_a and not found_original:
 				# save to place up front at the end
 				found_oneoffs.insert(0, new_num)
 				found_original = True
 			# this permutation matches a new 7-seg num
-			elif new_num in seven_segments and new_segs != num_a:
+			elif new_num in sgmt.indices and new_segs != num_a:
 				found_oneoffs.append(new_num)
 			# this permutation is not a 7-segment representation of a number
 			else:
@@ -229,7 +229,7 @@ class ReadWriteFile:
 		with open(self.out, "w") as fout, open(self.src, 'r') as fin:
 			found_lineset = []
 			for l in fin:
-				if len(l)>2 and l[0:3] in segs:
+				if len(l)>2 and l[0:3] in sgmt.segs:
 					# TODO check for \n or other characters; test len matches
 					found_lineset.append(l)
 					# turn 3 lines of segs into a single digit row
@@ -268,8 +268,8 @@ class ReadWriteFile:
 						fout.write(digit_line+"\n")
 						# store this line in all numbers found
 						nums.append (digit_line)
-			# account numbers
-			print(nums)
+			## account numbers
+			# print(nums)
 		# file automatically closes after generator
 		return nums
 
